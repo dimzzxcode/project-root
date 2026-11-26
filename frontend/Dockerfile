@@ -14,11 +14,13 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Public variables are baked into the browser bundle at build time.
-ARG NEXT_PUBLIC_API_URL=http://localhost:8080
+# Public URL of the backend API, baked into the browser bundle at build time.
+# Required: pass it with `--build-arg NEXT_PUBLIC_API_URL=...` (Compose does this).
+ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV NEXT_TELEMETRY_DISABLED=1
 
+RUN test -n "$NEXT_PUBLIC_API_URL" || (echo "NEXT_PUBLIC_API_URL build arg is required" >&2; exit 1)
 RUN npm run build
 
 # ---- runtime ---------------------------------------------------------------

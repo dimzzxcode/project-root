@@ -38,12 +38,19 @@ type DB struct {
 // Load reads configuration from the environment. Existing environment
 // variables always win over values from a local .env file.
 func Load() (Config, error) {
-	loadDotEnv()
+	if err := loadDotEnv(); err != nil {
+		return Config{}, err
+	}
+
+	autoMigrate, err := getBool("DB_AUTO_MIGRATE", true)
+	if err != nil {
+		return Config{}, err
+	}
 
 	cfg := Config{
 		Env:         getString("APP_ENV", "development"),
 		Port:        getString("APP_PORT", "8080"),
-		AutoMigrate: getBool("DB_AUTO_MIGRATE", true),
+		AutoMigrate: autoMigrate,
 		DB: DB{
 			Host:     getString("DB_HOST", "localhost"),
 			Port:     getString("DB_PORT", "5432"),
@@ -54,7 +61,6 @@ func Load() (Config, error) {
 		},
 	}
 
-	var err error
 	if cfg.DB.MaxOpenConns, err = getInt("DB_MAX_OPEN_CONNS", 25); err != nil {
 		return Config{}, err
 	}
@@ -122,14 +128,17 @@ func (d DB) DSN() string {
 	return u.String()
 }
 
-func loadDotEnv() {
+func loadDotEnv() error {
 	for _, file := range []string{".env", "../.env"} {
 		if _, err := os.Stat(file); err == nil {
 			// Load never overrides variables that are already set.
-			_ = godotenv.Load(file)
-			return
+			if err := godotenv.Load(file); err != nil {
+				return fmt.Errorf("load %s: %w", file, err)
+			}
+			return nil
 		}
 	}
+	return nil
 }
 
 func getString(key, fallback string) string {
@@ -151,16 +160,16 @@ func getInt(key string, fallback int) (int, error) {
 	return parsed, nil
 }
 
-func getBool(key string, fallback bool) bool {
+func getBool(key string, fallback bool) (bool, error) {
 	value, ok := os.LookupEnv(key)
 	if !ok || strings.TrimSpace(value) == "" {
-		return fallback
+		return fallback, nil
 	}
 	parsed, err := strconv.ParseBool(strings.TrimSpace(value))
 	if err != nil {
-		return fallback
+		return false, fmt.Errorf("%s must be a boolean: %w", key, err)
 	}
-	return parsed
+	return parsed, nil
 }
 
 func getDuration(key string, fallback time.Duration) (time.Duration, error) {
