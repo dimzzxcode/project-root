@@ -1,6 +1,6 @@
 module github.com/example/fullstack-starter/backend
 
-go 1.26.4
+go 1.26.0
 
 require (
 	github.com/gofiber/fiber/v3 v3.7.0

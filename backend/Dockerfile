@@ -15,7 +15,12 @@ RUN CGO_ENABLED=0 GOOS=linux go build \
     -trimpath \
     -ldflags="-s -w" \
     -o /out/api \
-    ./cmd/api
+    ./cmd/api \
+    && CGO_ENABLED=0 GOOS=linux go build \
+    -trimpath \
+    -ldflags="-s -w" \
+    -o /out/migrate \
+    ./cmd/migrate
 
 # ---- runtime stage ---------------------------------------------------------
 FROM alpine:3.22
@@ -26,8 +31,11 @@ RUN apk add --no-cache ca-certificates tzdata \
 
 WORKDIR /app
 COPY --from=build /out/api /app/api
+COPY --from=build /out/migrate /app/migrate
 
 USER app
 EXPOSE 8080
 
-ENTRYPOINT ["/app/api"]
+# CMD (instead of ENTRYPOINT) lets `docker compose run --rm backend /app/migrate up`
+# replace the default command.
+CMD ["/app/api"]
