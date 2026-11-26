@@ -1,0 +1,19 @@
+// Package model contains the data structures shared across the application.
+package model
+
+import "time"
+
+// Item is the sample resource used to prove the stack is wired end to end.
+type Item struct {
+	ID          int64     `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+// ItemPayload is the request body accepted by the create and update endpoints.
+type ItemPayload struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}

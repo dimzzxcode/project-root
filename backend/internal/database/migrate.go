@@ -22,7 +22,7 @@ func Migrate(cfg config.DB, logger *slog.Logger) error {
 	if err != nil {
 		return fmt.Errorf("open migration connection: %w", err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	driver, err := pgxmigrate.WithInstance(db, &pgxmigrate.Config{})
 	if err != nil {
@@ -60,7 +60,7 @@ func MigrateVersion(cfg config.DB) (uint, bool, error) {
 	if err != nil {
 		return 0, false, fmt.Errorf("open migration connection: %w", err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	driver, err := pgxmigrate.WithInstance(db, &pgxmigrate.Config{})
 	if err != nil {
